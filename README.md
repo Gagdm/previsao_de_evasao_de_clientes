@@ -28,6 +28,8 @@ data/processed/base_transformada.csv
         │  03 — recorte de colunas por tipo de algoritmo
         ▼
 versao_a_supervisionada.csv · versao_b_mista.csv · versao_c_numerica.csv
+
+data/processed/base_particionada.csv  +  PreprocessadorChurn (= Versão A)
         │  04 — árvore de decisão (pré-poda, pós-poda, regras)
         ▼
 resultados/arvore_escolhida.json
@@ -36,17 +38,21 @@ resultados/arvore_escolhida.json
 resultados/xgboost_escolhido.json
 ```
 
-No MP2, os notebooks partem de `base_particionada.csv` e aplicam as transformações do notebook 03
-por meio do `PreprocessadorChurn` (`preprocessamento.py`), dentro de um `Pipeline`. Ajustado no treino
-inteiro, ele reproduz exatamente a Versão A (os notebooks verificam isso); dentro da validação cruzada,
-é reajustado em cada dobra, o que elimina qualquer contaminação entre as dobras.
+O MP1 (notebooks 01 a 03) prepara os dados e gera as três versões da base. O MP2 (notebooks 04 e 05)
+parte de `base_particionada.csv` e aplica as transformações do notebook 03 por meio do
+`PreprocessadorChurn` (`preprocessamento.py`), dentro de um `Pipeline`. Ajustado no treino inteiro,
+ele reproduz exatamente a Versão A (os notebooks verificam isso); dentro da validação cruzada, é
+reajustado em cada dobra, o que elimina a contaminação entre as dobras.
 
 ## Notebooks
 
-Rode na ordem: cada notebook lê o arquivo gerado pelo anterior. Os notebooks estão escritos em
-formato de relatório, com a teoria de cada etapa, a interpretação dos resultados e o código comentado.
+Rode na ordem: cada notebook depende de arquivos gerados pelos anteriores (veja o fluxo acima). Os
+notebooks estão escritos em formato de relatório, com a teoria de cada etapa, a interpretação dos
+resultados e o código comentado.
 
-### 01 — Limpeza e consolidação [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/01_limpeza_e_consolidacao.ipynb)
+### MP1 — Preparação dos dados
+
+#### 01 — Limpeza e consolidação [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/01_limpeza_e_consolidacao.ipynb)
 
 Mede a qualidade da base original nas quatro dimensões (completude, validade, consistência e
 unicidade) e corrige o que encontra: remove clientes duplicados, padroniza as categorias escritas
@@ -55,7 +61,7 @@ as datas em informação útil (quantidade de chamados, tempo de casa), cria o r
 remove clientes com menos de 2 meses de casa. Aplica apenas correções que não dependem de
 estatísticas da base. Gera `data/processed/base_limpa.csv` (4.976 clientes, 35,4% de churn).
 
-### 02 — Divisão treino/teste e análise exploratória [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/02_divisao_treino_teste_analise_exploratoria.ipynb)
+#### 02 — Divisão treino/teste e análise exploratória [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/02_divisao_treino_teste_analise_exploratoria.ipynb)
 
 Separa 70% dos clientes para treino e 30% para teste, de forma estratificada (mesma proporção de
 churn nos dois) e com `random_state=42`. Em seguida, analisa **apenas o treino** com estatística
@@ -63,7 +69,7 @@ descritiva, distribuições, taxa de churn por grupo e por faixa, correlações 
 com recomendações para o notebook 03. Gera `data/processed/base_particionada.csv`, com a coluna
 `split` (`treino` ou `teste`).
 
-### 03 — Transformações e versões [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/03_transformacoes_e_versoes.ipynb)
+#### 03 — Transformações e versões [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/03_transformacoes_e_versoes.ipynb)
 
 Preenche os valores ausentes (mensalidade pela mediana do grupo de fibra óptica, demais colunas
 pela moda), cria o indicador `mensalidade_ausente`, padroniza as variáveis numéricas
@@ -80,15 +86,15 @@ tipo de algoritmo:
 | `versao_b_mista.csv` | K-prototypes (MP3) | numéricas escaladas, categóricas em texto, binárias (índices categóricos `[4, 5, 6, 7]`) | só referência |
 | `versao_c_numerica.csv` | K-means e DBSCAN (MP3) | numéricas escaladas, one-hot, binárias | só referência |
 
-## MP2 — Algoritmos supervisionados
+### MP2 — Algoritmos supervisionados
 
 Protocolo comum aos dois notebooks: validação cruzada estratificada em 5 dobras dentro do treino
 (`random_state=42`), escolha de hiperparâmetros pela **AUC-PR** e limiar de decisão escolhido nas
 previsões fora da dobra para atingir **80% de recall** da classe churn (`config.RECALL_ALVO`). O teste
 é usado uma única vez, ao final. O F2 é reportado, mas não é usado como critério: com 35,4% de churn,
-prever "cancela" para todos já dá F2 = 0,733, mais que qualquer árvore.
+prever "cancela" para todos os clientes já dá F2 = 0,733, mais que a melhor árvore obtida.
 
-### 04 — Árvore de decisão [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/04_arvore_de_decisao.ipynb)
+#### 04 — Árvore de decisão [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/04_arvore_de_decisao.ipynb)
 
 Mede o sobreajuste da árvore sem restrições, estuda a pré-poda (curvas de validação de `max_depth`,
 `min_samples_leaf`, `max_leaf_nodes` e `min_impurity_decrease`; `GridSearchCV` com 588 combinações) e a
@@ -101,7 +107,7 @@ Resultado: a pré-poda por tamanho de folha (40 clientes) superou a pós-poda (A
 a árvore escolhida (híbrida, 48 folhas) tem AUC-PR de 0,615 no teste e antecipa 76% dos cancelamentos
 acionando metade da base. Perfil de risco: contrato mensal, cliente recente e chamados/atrasos.
 
-### 05 — XGBoost e comparação [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/05_xgboost_e_comparacao.ipynb)
+#### 05 — XGBoost e comparação [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/05_xgboost_e_comparacao.ipynb)
 
 Avalia o XGBoost padrão, mede o compromisso `n_estimators` × `learning_rate` com curvas de erro por
 iteração, compara `GridSearchCV` (128 combinações) com Optuna (TPE + MedianPruner, 10 hiperparâmetros,
@@ -111,7 +117,7 @@ no mesmo ponto de operação, com intervalos de confiança por *bootstrap* parea
 `resultados/arvore_escolhida.json` (gerado pelo 04). Gera `resultados/xgboost_escolhido.json`.
 
 Os parágrafos de **leitura dos resultados** do notebook 05 são gerados a partir dos números calculados
-na própria execução.
+na própria execução. Os resultados do XGBoost serão resumidos aqui depois que o notebook for executado.
 
 ## Como usar as bases na modelagem
 
@@ -135,7 +141,7 @@ previsao_de_evasao_de_clientes/
 ├── notebooks/          # um notebook por etapa
 ├── resultados/         # hiperparâmetros, limiares e métricas dos modelos escolhidos (MP2)
 ├── config.py           # constantes compartilhadas (caminhos, datas, random_state, de-para, recall-alvo)
-├── preprocessing.py # transformações do notebook 03 como transformador do scikit-learn (MP2)
+├── preprocessamento.py # transformações do notebook 03 como transformador do scikit-learn (MP2)
 └── requirements.txt    # bibliotecas usadas
 ```
 
@@ -145,7 +151,8 @@ previsao_de_evasao_de_clientes/
 2. Rode a primeira célula. Ela baixa o repositório atualizado e instala as bibliotecas.
 3. Para salvar o notebook: **Arquivo → Salvar uma cópia no GitHub**, branch `main`, mesmo caminho
    em `notebooks/`.
-4. Para salvar os CSVs gerados: a última célula baixa os arquivos para o seu computador. Depois,
-   no GitHub, entre em `data/processed/` → **Add file → Upload files** → arraste os CSVs → **Commit changes**.
-   No MP2, o mesmo vale para os arquivos `.json` de `resultados/`: o notebook 05 precisa do
-   `arvore_escolhida.json` no repositório, porque cada notebook do Colab roda em uma sessão separada.
+4. Para salvar os arquivos gerados: a última célula baixa os arquivos para o seu computador. Depois,
+   no GitHub, entre na pasta de destino → **Add file → Upload files** → arraste os arquivos →
+   **Commit changes**. No MP1, os CSVs vão para `data/processed/`; no MP2, os `.json` vão para
+   `resultados/`. O notebook 05 precisa do `arvore_escolhida.json` no repositório, porque cada
+   notebook do Colab roda em uma sessão separada.
