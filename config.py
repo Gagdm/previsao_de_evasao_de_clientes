@@ -19,9 +19,17 @@ DATA_CORTE = pd.Timestamp("2026-09-21")
 FIM_JANELA = DATA_CORTE + pd.Timedelta(days=60)  # 2026-11-20
 MATURACAO_MINIMA_MESES = 2
 
+# Resultados dos modelos (MP2)
+RESULTADOS = RAIZ / "resultados"
+ARVORE_ESCOLHIDA = RESULTADOS / "arvore_escolhida.json"
+XGBOOST_ESCOLHIDO = RESULTADOS / "xgboost_escolhido.json"
+
 # Experimento (Aula 3)
 RANDOM_STATE = 42
 TAMANHO_TESTE = 0.30
+N_DOBRAS = 5          # validação cruzada estratificada dentro do treino (MP2)
+BETA = 2              # F2: reportado como métrica complementar (MP2)
+RECALL_ALVO = 0.80    # ponto de operação: antecipar 80% dos cancelamentos (MP2)
 
 # Colunas
 ID = "id_cliente"
