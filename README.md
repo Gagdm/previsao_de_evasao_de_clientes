@@ -28,7 +28,18 @@ data/processed/base_transformada.csv
         │  03 — recorte de colunas por tipo de algoritmo
         ▼
 versao_a_supervisionada.csv · versao_b_mista.csv · versao_c_numerica.csv
+        │  04 — árvore de decisão (pré-poda, pós-poda, regras)
+        ▼
+resultados/arvore_escolhida.json
+        │  05 — XGBoost (GridSearchCV × Optuna) e comparação com a árvore
+        ▼
+resultados/xgboost_escolhido.json
 ```
+
+No MP2, os notebooks partem de `base_particionada.csv` e aplicam as transformações do notebook 03
+por meio do `PreprocessadorChurn` (`preprocessamento.py`), dentro de um `Pipeline`. Ajustado no treino
+inteiro, ele reproduz exatamente a Versão A (os notebooks verificam isso); dentro da validação cruzada,
+é reajustado em cada dobra, o que elimina qualquer contaminação entre as dobras.
 
 ## Notebooks
 
@@ -69,6 +80,39 @@ tipo de algoritmo:
 | `versao_b_mista.csv` | K-prototypes (MP3) | numéricas escaladas, categóricas em texto, binárias (índices categóricos `[4, 5, 6, 7]`) | só referência |
 | `versao_c_numerica.csv` | K-means e DBSCAN (MP3) | numéricas escaladas, one-hot, binárias | só referência |
 
+## MP2 — Algoritmos supervisionados
+
+Protocolo comum aos dois notebooks: validação cruzada estratificada em 5 dobras dentro do treino
+(`random_state=42`), escolha de hiperparâmetros pela **AUC-PR** e limiar de decisão escolhido nas
+previsões fora da dobra para atingir **80% de recall** da classe churn (`config.RECALL_ALVO`). O teste
+é usado uma única vez, ao final. O F2 é reportado, mas não é usado como critério: com 35,4% de churn,
+prever "cancela" para todos já dá F2 = 0,733, mais que qualquer árvore.
+
+### 04 — Árvore de decisão [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/04_arvore_de_decisao.ipynb)
+
+Mede o sobreajuste da árvore sem restrições, estuda a pré-poda (curvas de validação de `max_depth`,
+`min_samples_leaf`, `max_leaf_nodes` e `min_impurity_decrease`; `GridSearchCV` com 588 combinações) e a
+pós-poda por custo-complexidade (`ccp_alpha`, com a regra de um erro padrão), testa uma árvore híbrida
+e escolhe o limiar. Avalia no teste (gap treino × teste, matriz de confusão, ROC, precisão-recall,
+curvas de aprendizado), extrai as regras SE-ENTÃO na unidade original e compara a importância por
+impureza com a importância por permutação. Gera `resultados/arvore_escolhida.json`.
+
+Resultado: a pré-poda por tamanho de folha (40 clientes) superou a pós-poda (AUC-PR 0,627 × 0,592);
+a árvore escolhida (híbrida, 48 folhas) tem AUC-PR de 0,615 no teste e antecipa 76% dos cancelamentos
+acionando metade da base. Perfil de risco: contrato mensal, cliente recente e chamados/atrasos.
+
+### 05 — XGBoost e comparação [![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Gagdm/previsao_de_evasao_de_clientes/blob/main/notebooks/05_xgboost_e_comparacao.ipynb)
+
+Avalia o XGBoost padrão, mede o compromisso `n_estimators` × `learning_rate` com curvas de erro por
+iteração, compara `GridSearchCV` (128 combinações) com Optuna (TPE + MedianPruner, 10 hiperparâmetros,
+incluindo `min_child_weight` e `scale_pos_weight`), avalia no teste e interpreta o modelo (ganho,
+frequência, permutação e valores SHAP calculados pelo próprio XGBoost). Por fim, compara com a árvore
+no mesmo ponto de operação, com intervalos de confiança por *bootstrap* pareado. Precisa de
+`resultados/arvore_escolhida.json` (gerado pelo 04). Gera `resultados/xgboost_escolhido.json`.
+
+Os parágrafos de **leitura dos resultados** do notebook 05 são gerados a partir dos números calculados
+na própria execução.
+
 ## Como usar as bases na modelagem
 
 - `id_cliente` e `split` são colunas de controle: **nunca** entram como atributo.
@@ -89,7 +133,9 @@ previsao_de_evasao_de_clientes/
 │   ├── raw/            # base original, nunca editada à mão
 │   └── processed/      # arquivos gerados pelos notebooks
 ├── notebooks/          # um notebook por etapa
-├── config.py           # constantes compartilhadas (caminhos, datas, random_state, de-para)
+├── resultados/         # hiperparâmetros, limiares e métricas dos modelos escolhidos (MP2)
+├── config.py           # constantes compartilhadas (caminhos, datas, random_state, de-para, recall-alvo)
+├── preprocessing.py # transformações do notebook 03 como transformador do scikit-learn (MP2)
 └── requirements.txt    # bibliotecas usadas
 ```
 
@@ -101,3 +147,5 @@ previsao_de_evasao_de_clientes/
    em `notebooks/`.
 4. Para salvar os CSVs gerados: a última célula baixa os arquivos para o seu computador. Depois,
    no GitHub, entre em `data/processed/` → **Add file → Upload files** → arraste os CSVs → **Commit changes**.
+   No MP2, o mesmo vale para os arquivos `.json` de `resultados/`: o notebook 05 precisa do
+   `arvore_escolhida.json` no repositório, porque cada notebook do Colab roda em uma sessão separada.
