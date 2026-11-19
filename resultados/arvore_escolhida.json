@@ -1,0 +1,34 @@
+{
+  "modelo": "DecisionTreeClassifier",
+  "estrategia": "híbrida (pré + pós)",
+  "hiperparametros": {
+    "ccp_alpha": 0.0003606324172236214,
+    "criterion": "entropy",
+    "max_depth": 8,
+    "min_samples_leaf": 40,
+    "min_samples_split": 100
+  },
+  "random_state": 42,
+  "limiar": 0.2926829268292683,
+  "profundidade": 8,
+  "folhas": 48,
+  "validacao_cruzada": {
+    "AUC_PR (validação)": 0.6272068682367248,
+    "AUC_ROC (validação)": 0.7663231340349255,
+    "recall (validação)": 0.5041111220828807,
+    "precisao (validação)": 0.630728849133643,
+    "F2 (validação)": 0.5227432252889257,
+    "acuracia (validação)": 0.7180605715793467,
+    "AUC_PR desvio (validação)": 0.013509078996799468
+  },
+  "recall_alvo": 0.8,
+  "teste": {
+    "recall": 0.7599243856332704,
+    "precisão": 0.5310435931307794,
+    "F2": 0.6996171249564914,
+    "acurácia": 0.6771600803750837,
+    "% acionados": 0.507032819825854,
+    "AUC-ROC": 0.75646428319306,
+    "AUC-PR": 0.6151076718306094
+  }
+}
