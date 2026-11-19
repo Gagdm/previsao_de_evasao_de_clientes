@@ -4,6 +4,14 @@ Modelo para identificar clientes de uma operadora com risco de cancelar o servi�
 próximos 60 dias. Projeto da disciplina Sistemas Inteligentes (CIn-UFPE), dividido em três
 miniprojetos: preparação dos dados (MP1), algoritmos supervisionados (MP2) e não supervisionados (MP3).
 
+## Equipe
+
+- Davi Lyra Dubeux
+- Gabriel Alves
+- Isabela Nascimento
+- Karina Lima
+- Lara Luchi
+
 ## O problema
 
 A operadora quer agir antes do cancelamento. Para isso, olhamos a situação de cada cliente em uma
@@ -40,7 +48,7 @@ resultados/xgboost_escolhido.json
 
 O MP1 (notebooks 01 a 03) prepara os dados e gera as três versões da base. O MP2 (notebooks 04 e 05)
 parte de `base_particionada.csv` e aplica as transformações do notebook 03 por meio do
-`PreprocessadorChurn` (`preprocessamento.py`), dentro de um `Pipeline`. Ajustado no treino inteiro,
+`PreprocessadorChurn` (`preprocessing.py`), dentro de um `Pipeline`. Ajustado no treino inteiro,
 ele reproduz exatamente a Versão A (os notebooks verificam isso); dentro da validação cruzada, é
 reajustado em cada dobra, o que elimina a contaminação entre as dobras.
 
@@ -117,7 +125,18 @@ no mesmo ponto de operação, com intervalos de confiança por *bootstrap* parea
 `resultados/arvore_escolhida.json` (gerado pelo 04). Gera `resultados/xgboost_escolhido.json`.
 
 Os parágrafos de **leitura dos resultados** do notebook 05 são gerados a partir dos números calculados
-na própria execução. Os resultados do XGBoost serão resumidos aqui depois que o notebook for executado.
+na própria execução.
+
+Resultado: com os padrões da biblioteca, o XGBoost sobreajusta (gap treino × validação de 0,399 na
+AUC-PR) e perde para a árvore. Depois da busca, a grade e o Optuna empataram (AUC-PR de validação
+0,660 × 0,663, diferença menor que um erro padrão) e ficou o modelo da grade: 500 árvores de
+profundidade 2, taxa de aprendizado 0,03, `subsample` 0,8, `colsample_bytree` 0,7 e `gamma` 1. No
+teste, a AUC-PR é de 0,680 (árvore: 0,615) e a AUC-ROC, de 0,803 (árvore: 0,756); no limiar de
+recall 80%, antecipa 79,8% dos cancelamentos com precisão de 54,2%, acionando 52,1% da base. Pelo
+*bootstrap* pareado, a vantagem na AUC-PR é significativa (IC 95% de +0,040 a +0,090), mas a
+diferença de precisão no ponto de operação não é. Em resumo: o XGBoost ordena melhor os clientes por
+risco, e a árvore entrega praticamente a mesma campanha com regras legíveis. Os dois modelos apontam
+os mesmos fatores de risco: tipo de contrato, tempo de casa e chamados.
 
 ## Como usar as bases na modelagem
 
@@ -141,7 +160,7 @@ previsao_de_evasao_de_clientes/
 ├── notebooks/          # um notebook por etapa
 ├── resultados/         # hiperparâmetros, limiares e métricas dos modelos escolhidos (MP2)
 ├── config.py           # constantes compartilhadas (caminhos, datas, random_state, de-para, recall-alvo)
-├── preprocessamento.py # transformações do notebook 03 como transformador do scikit-learn (MP2)
+├── preprocessing.py   # transformações do notebook 03 como transformador do scikit-learn (MP2)
 └── requirements.txt    # bibliotecas usadas
 ```
 
