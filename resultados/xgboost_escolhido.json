@@ -1,0 +1,77 @@
+{
+  "modelo": "XGBClassifier",
+  "busca": "XGBoost — GridSearchCV",
+  "hiperparametros": {
+    "colsample_bytree": 0.7,
+    "gamma": 1,
+    "learning_rate": 0.03,
+    "max_depth": 2,
+    "n_estimators": 500,
+    "subsample": 0.8
+  },
+  "random_state": 42,
+  "limiar": 0.29005494713783264,
+  "recall_alvo": 0.8,
+  "validacao_cruzada": {
+    "AUC_PR (validação)": 0.6599587751200243,
+    "AUC_ROC (validação)": 0.7887658664516037,
+    "recall (validação)": 0.5292123366577794,
+    "precisao (validação)": 0.6430765739651518,
+    "F2 (validação)": 0.5477869361842131,
+    "acuracia (validação)": 0.7283996273025609,
+    "AUC_PR desvio (validação)": 0.014280922307997176
+  },
+  "teste": {
+    "recall": 0.7977315689981096,
+    "precisão": 0.5424164524421594,
+    "F2": 0.7290946786454734,
+    "acurácia": 0.6898861352980576,
+    "% acionados": 0.521098459477562,
+    "AUC-ROC": 0.8026927813379977,
+    "AUC-PR": 0.6799561428355566
+  },
+  "comparacao_com_arvore_bootstrap": {
+    "AUC-PR": {
+      "diferença média (XGB − árvore)": 0.06515035295436662,
+      "IC 95% inferior": 0.04024487660421163,
+      "IC 95% superior": 0.09003810489903091,
+      "significativa?": "sim"
+    },
+    "AUC-ROC": {
+      "diferença média (XGB − árvore)": 0.04652085573220183,
+      "IC 95% inferior": 0.03335430380562684,
+      "IC 95% superior": 0.06063972934160586,
+      "significativa?": "sim"
+    },
+    "precisão no limiar": {
+      "diferença média (XGB − árvore)": 0.011365325757619765,
+      "IC 95% inferior": -0.005486891939367233,
+      "IC 95% superior": 0.029555713104294456,
+      "significativa?": "não"
+    },
+    "recall no limiar": {
+      "diferença média (XGB − árvore)": 0.0379854595379444,
+      "IC 95% inferior": 0.009688522202805052,
+      "IC 95% superior": 0.06604009906605661,
+      "significativa?": "sim"
+    },
+    "% acionados no limiar": {
+      "diferença média (XGB − árvore)": 0.014184862692565307,
+      "IC 95% inferior": -0.004018754186202234,
+      "IC 95% superior": 0.03148024112525116,
+      "significativa?": "não"
+    }
+  },
+  "buscas": {
+    "grid": {
+      "tempo_s": 109.53581118583679,
+      "melhor_auc_pr": 0.6599587751200243
+    },
+    "optuna": {
+      "tempo_s": 92.97643828392029,
+      "tentativas": 80,
+      "interrompidas": 15,
+      "melhor_auc_pr": 0.6634498849167125
+    }
+  }
+}
